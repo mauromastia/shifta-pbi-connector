@@ -49,8 +49,7 @@
     .btn-primary:hover { background: #106EBE; }
     .btn-excel { background: #f0f9f0; border-color: #a8d5a8; color: #1a6e1a; }
     .btn-excel:hover { background: #e0f2e0; }
-    .btn-claude { background: #f5f0ff; border-color: #c9a8f5; color: #5c20c4; }
-    .btn-claude:hover { background: #ede0ff; }
+
     .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; margin-left: 6px; }
     .tag-ars { background: #e8f4fd; color: #185FA5; }
     .tag-usd { background: #e8f8e8; color: #1a6e1a; }
@@ -131,7 +130,7 @@
     <div class="actions">
       <button class="btn" onclick="loadData()">↻ Actualizar</button>
       <button class="btn btn-excel" onclick="exportExcel()">⬇ Descargar Excel</button>
-      <button class="btn btn-claude" onclick="analyzeInClaude()">✦ Analizar en Claude</button>
+      
     </div>
   </div>
 </div>
@@ -297,42 +296,7 @@ async function exportExcel() {
   }
 }
 
-function analyzeInClaude() {
-  const totalARS = MONTHS.reduce((s, m) => s + (revenueARS[m] || 0), 0);
-  const totalUSD = MONTHS.reduce((s, m) => s + (revenueUSD[m] || 0), 0);
 
-  const arsRows = MONTHS.map((m, i) => `${MONTH_LABELS[i]} 2026: ${fmt(revenueARS[m], 'ARS')}`).join('\n');
-  const usdRows = MONTHS.map((m, i) => `${MONTH_LABELS[i]} 2026: ${fmt(revenueUSD[m], 'USD')}`).join('\n');
-
-  const prompt = `Tengo los siguientes datos de Revenue del reporte "Revenue Forecast & Actual" de Power BI de Shifta:
-
-REVENUE LOCAL ARS (fila 7 del P&L):
-${arsRows}
-Total ARS: ${fmt(totalARS, 'ARS')}
-
-REVENUE LOCAL USD (fila 8 del P&L):
-${usdRows}
-Total USD: ${fmt(totalUSD, 'USD')}
-
-Por favor analizá estos datos e identificá:
-1. Tendencia general del revenue a lo largo del año
-2. Meses con mejor y peor performance
-3. Cualquier patrón o anomalía relevante`;
-
-  navigator.clipboard.writeText(prompt).then(() => {
-    showToast('✓ Datos copiados — pegá en Claude');
-    setTimeout(() => window.open('https://claude.ai', '_blank'), 800);
-  }).catch(() => {
-    const ta = document.createElement('textarea');
-    ta.value = prompt;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('✓ Datos copiados — pegá en Claude');
-    setTimeout(() => window.open('https://claude.ai', '_blank'), 800);
-  });
-}
 
 function resetView() {
   accessToken = null;

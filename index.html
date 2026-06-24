@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shifta · Power BI Connector</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f0f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .card { background: #fff; border-radius: 14px; border: 1px solid #e5e5e5; padding: 2rem; max-width: 540px; width: 100%; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding-bottom: 1.25rem; border-bottom: 1px solid #f0f0f0; }
+    .logo-icon { width: 38px; height: 38px; background: #0078D4; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .logo-icon svg { width: 22px; height: 22px; }
+    .logo-name { font-size: 15px; font-weight: 600; color: #111; }
+    .logo-sub { font-size: 12px; color: #999; margin-top: 1px; }
+
+    /* LOGIN */
+    .login-wrap { text-align: center; padding: 1rem 0; }
+    .login-wrap h1 { font-size: 20px; font-weight: 600; color: #111; margin-bottom: 8px; }
+    .login-wrap p { font-size: 14px; color: #666; margin-bottom: 2rem; line-height: 1.6; }
+    .btn-ms { display: inline-flex; align-items: center; gap: 10px; background: #0078D4; color: #fff; border: none; border-radius: 8px; padding: 11px 22px; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.15s; text-decoration: none; }
+    .btn-ms:hover { background: #106EBE; }
+    .btn-ms svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .login-note { font-size: 12px; color: #aaa; margin-top: 1.25rem; }
+
+    /* LOADING */
+    .loading-wrap { text-align: center; padding: 2rem 0; }
+    .spinner { width: 36px; height: 36px; border: 3px solid #e5e5e5; border-top-color: #0078D4; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 1rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-wrap p { font-size: 14px; color: #666; }
+
+    /* ERROR */
+    .error-wrap { background: #fff5f5; border: 1px solid #fcc; border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem; }
+    .error-wrap p { font-size: 14px; color: #c00; margin-bottom: 10px; }
+    .btn-retry { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 7px 14px; border-radius: 7px; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #333; }
+    .btn-retry:hover { background: #f5f5f5; }
+
+    /* DATA */
+    .user-row { display: flex; align-items: center; gap: 8px; background: #f5f5f5; border-radius: 8px; padding: 8px 12px; margin-bottom: 1.5rem; font-size: 13px; color: #555; }
+    .user-row .dot { width: 8px; height: 8px; background: #107C10; border-radius: 50%; flex-shrink: 0; }
+    .user-row .logout { margin-left: auto; font-size: 12px; color: #999; cursor: pointer; text-decoration: underline; }
+    .user-row .logout:hover { color: #333; }
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+    .metric { background: #f8f8f8; border-radius: 10px; padding: 14px; }
+    .metric-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .metric-value { font-size: 20px; font-weight: 600; color: #111; }
+    .metric-value.sm { font-size: 14px; font-weight: 500; }
+    .section-title { font-size: 11px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    .tables-card { border: 1px solid #efefef; border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; font-size: 11px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 14px; background: #fafafa; border-bottom: 1px solid #efefef; }
+    td { padding: 10px 14px; border-bottom: 1px solid #f5f5f5; color: #222; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .empty-row td { color: #aaa; text-align: center; padding: 1.5rem; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-action { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 8px 14px; border-radius: 8px; cursor: pointer; border: 1px solid #e0e0e0; background: #fff; color: #333; transition: background 0.12s; text-decoration: none; }
+    .btn-action:hover { background: #f5f5f5; }
+    .btn-primary-action { background: #f0f7ff; border-color: #b5d4f4; color: #185FA5; }
+    .btn-primary-action:hover { background: #e0efff; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="1" y="1" width="9" height="9" fill="#fff" opacity="0.95"/>
+        <rect x="11" y="1" width="9" height="9" fill="#fff" opacity="0.7"/>
+        <rect x="1" y="11" width="9" height="9" fill="#fff" opacity="0.7"/>
+        <rect x="11" y="11" width="9" height="9" fill="#fff" opacity="0.5"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-name">Shifta · Power BI Connector</div>
+      <div class="logo-sub">Uso interno — solo lectura</div>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="view-login" class="login-wrap">
+    <h1>Conectar con Power BI</h1>
+    <p>Iniciá sesión con tu cuenta de Shifta para acceder al reporte.</p>
+    <button class="btn-ms" onclick="startLogin()">
+      <svg viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
+        <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
+        <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
+        <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
+      </svg>
+      Iniciar sesión con Microsoft
+    </button>
+    <p class="login-note">Tus credenciales no se almacenan. El acceso es de solo lectura.</p>
+  </div>
+
+  <!-- LOADING -->
+  <div id="view-loading" class="hidden">
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <p id="loading-msg">Conectando con Power BI...</p>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div id="view-error" class="hidden">
+    <div class="error-wrap">
+      <p id="error-msg">Error al conectar.</p>
+      <button class="btn-retry" onclick="resetView()">↩ Intentar de nuevo</button>
+    </div>
+  </div>
+
+  <!-- DATA -->
+  <div id="view-data" class="hidden">
+    <div class="user-row">
+      <div class="dot"></div>
+      <span id="user-name">Conectado</span>
+      <span class="logout" onclick="resetView()">Cerrar sesión</span>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Tablas</div>
+        <div class="metric-value" id="metric-tables">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Estado</div>
+        <div class="metric-value sm" id="metric-status">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Propietario</div>
+        <div class="metric-value sm" id="metric-owner">—</div>
+      </div>
+    </div>
+
+    <p class="section-title">Tablas disponibles</p>
+    <div class="tables-card">
+      <table>
+        <thead>
+          <tr><th>Nombre</th><th>Columnas</th></tr>
+        </thead>
+        <tbody id="tables-body"></tbody>
+      </table>
+    </div>
+
+    <div class="actions">
+      <button class="btn-action" onclick="loadData()">↻ Actualizar</button>
+      <a class="btn-action btn-primary-action" href="https://claude.ai" target="_blank">Abrir Claude ↗</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const CLIENT_ID = '9c7c3b36-4501-44d0-bc05-f40eef923f94';
+  const TENANT_ID = 'eb0ddf06-c931-488e-8a2a-719480e53698';
+  const DATASET_ID = '20f0d549-1d4e-4c70-8d37-ee53718d4aba';
+  const SCOPES = 'https://analysis.windows.net/powerbi/api/Dataset.Read.All openid profile';
+
+  let accessToken = null;
+  let redirectUri = window.location.origin + window.location.pathname;
+
+  function show(id) {
+    ['view-login','view-loading','view-error','view-data'].forEach(v => {
+      document.getElementById(v).classList.add('hidden');
+    });
+    document.getElementById(id).classList.remove('hidden');
+  }
+
+  function startLogin() {
+    const state = Math.random().toString(36).substring(2);
+    sessionStorage.setItem('oauth_state', state);
+    const params = new URLSearchParams({
+      client_id: CLIENT_ID,
+      response_type: 'token',
+      redirect_uri: redirectUri,
+      scope: SCOPES,
+      state: state,
+      response_mode: 'fragment'
+    });
+    window.location.href = `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/authorize?${params}`;
+  }
+
+  function checkCallback() {
+    const hash = window.location.hash.substring(1);
+    if (!hash) return false;
+    const params = new URLSearchParams(hash);
+    const token = params.get('access_token');
+    if (token) {
+      accessToken = token;
+      history.replaceState(null, '', window.location.pathname);
+      return true;
+    }
+    const error = params.get('error_description');
+    if (error) {
+      show('view-error');
+      document.getElementById('error-msg').textContent = decodeURIComponent(error.replace(/\+/g, ' '));
+      return true;
+    }
+    return false;
+  }
+
+  async function loadData() {
+    show('view-loading');
+    document.getElementById('loading-msg').textContent = 'Conectando con Power BI...';
+    try {
+      const dsRes = await fetch('https://api.powerbi.com/v1.0/myorg/datasets/' + DATASET_ID, {
+        headers: { 'Authorization': 'Bearer ' + accessToken }
+      });
+      if (!dsRes.ok) {
+        if (dsRes.status === 401) throw new Error('Token expirado. Volvé a iniciar sesión.');
+        if (dsRes.status === 403) throw new Error('Tu cuenta no tiene acceso a este dataset.');
+        if (dsRes.status === 404) throw new Error('Dataset no encontrado. Verificá que tengas acceso al workspace.');
+        throw new Error('Error al conectar (código ' + dsRes.status + ').');
+      }
+      const dataset = await dsRes.json();
+      document.getElementById('loading-msg').textContent = 'Cargando tablas...';
+      const tablesRes = await fetch('https://api.powerbi.com/v1.0/myorg/datasets/' + DATASET_ID + '/tables', {
+        headers: { 'Authorization': 'Bearer ' + accessToken }
+      });
+      let tables = [];
+      if (tablesRes.ok) {
+        const td = await tablesRes.json();
+        tables = td.value || [];
+      }
+      renderData(dataset, tables);
+    } catch(e) {
+      show('view-error');
+      document.getElementById('error-msg').textContent = e.message || 'Error inesperado.';
+    }
+  }
+
+  function renderData(dataset, tables) {
+    show('view-data');
+    document.getElementById('user-name').textContent = dataset.name || 'Dataset conectado';
+    document.getElementById('metric-tables').textContent = tables.length || '—';
+    document.getElementById('metric-status').textContent = dataset.isRefreshable ? 'Actualizable' : 'Solo lectura';
+    document.getElementById('metric-owner').textContent = dataset.configuredBy || '—';
+    const tbody = document.getElementById('tables-body');
+    tbody.innerHTML = '';
+    if (tables.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="2">No se encontraron tablas expuestas por este dataset.</td></tr>';
+    } else {
+      tables.forEach(t => {
+        const cols = t.columns ? t.columns.length : '—';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><strong>${t.name}</strong></td><td>${cols}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+  }
+
+  function resetView() {
+    accessToken = null;
+    show('view-login');
+  }
+
+  if (checkCallback() && accessToken) {
+    loadData();
+  }
+</script>
+</body>
+</html>
